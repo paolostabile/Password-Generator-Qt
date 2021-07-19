@@ -11,15 +11,18 @@ CONFIG += c++11
 SOURCES += \
     edit_password.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    save_password.cpp
 
 HEADERS += \
     edit_password.h \
-    mainwindow.h
+    mainwindow.h \
+    save_password.h
 
 FORMS += \
     edit_password.ui \
-    mainwindow.ui
+    mainwindow.ui \
+    save_password.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -17,7 +17,7 @@ public:
     string numbers = "0123456789";
     string symbols = "!#$%&'()*+,-./:;<=>?@[]^_{|}~";
     string password;
-    QString passwordShuffle;
+    static QString passwordShuffle;
     bool hasLower, hasUpper, hasDigit ,specialChar = false;
     static int passwordLength;
     QSqlDatabase db;
@@ -40,6 +40,7 @@ private slots:
     void on_Numbers_spinBox_valueChanged();
     void on_Symbols_spinBox_valueChanged();
     void on_ResetButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     void ShowDatabaseTable();

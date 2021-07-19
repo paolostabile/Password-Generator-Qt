@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "edit_password.h"
+#include "save_password.h"
 #include <QtSql>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -8,6 +9,7 @@
 using namespace std;
 
 int MainWindow::passwordLength;
+QString MainWindow::passwordShuffle;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -15,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ::MainWindow::passwordLength=ui->UpperCase_spinBox->value()+ui->LowerCase_spinBox->value()+ui->Numbers_spinBox->value()+ui->Symbols_spinBox->value();
+    ::MainWindow::passwordShuffle="";
 }
 
 MainWindow::~MainWindow()
@@ -24,7 +27,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_GeneratePassword_clicked()
 {
-    password = ""; passwordShuffle = "";
+    password = "";
     srand(unsigned(time(0)));
     for (int i = 0; i < ui->UpperCase_spinBox->value(); ++i) {
         int randomInt = rand()%25;
@@ -113,7 +116,7 @@ void MainWindow::on_CreateDatabase_clicked()
     {
         qDebug()<<"problem opening database";
     }
-    QString query = "CREATE TABLE SavedPasswords(Password VARCHAR(40));";
+    QString query = "CREATE TABLE SavedPasswords(Password VARCHAR(40), Description VARCHAR(40));";
     QSqlQuery qry;
     if(!qry.exec(query))
     {
@@ -127,47 +130,64 @@ void MainWindow::on_tableView_activated(const QModelIndex &index)
 {
     QString val = ui->tableView->model()->data(index).toString();
     QSqlQuery qryShow;
-    qryShow.prepare("SELECT * FROM SavedPasswords WHERE Password='"+val+"'");
+    qryShow.prepare("SELECT * FROM SavedPasswords WHERE Password='"+val+"' or Description='"+val+"'");
     if(qryShow.exec())
-        while(qryShow.next())
+        while(qryShow.next()){
             ui->GeneratedPassword_2->setText(qryShow.value(0).toString());
+            /*ui->GeneratedPassword_2->setText(qryShow.value(1).toString());*/
+        }
 }
 
 void MainWindow::on_Save_clicked()
 {
-    QSqlQuery InsertQuery;
-    InsertQuery.prepare("INSERT INTO SavedPasswords (Password) VALUES ('"+passwordShuffle+"')");
-    if(InsertQuery.exec()){
-        QMessageBox::information(this,tr("Save"),tr("Your password is saved to database."));
+    if(ui->GeneratedPassword_2->text()!="")
+    {
+        save_password savePassword;
+        savePassword.setModal(true);
+        savePassword.exec();
+        ui->GeneratedPassword->clear();
+        ui->GeneratedPassword_2->clear();
+        ShowDatabaseTable();
     }
-    ShowDatabaseTable();
+    else
+        QMessageBox::warning(this,tr("Error"),tr("You didn't generate password!"));
 }
 
 void MainWindow::on_Edit_clicked()
 {
-    QString oldPassword = ui->GeneratedPassword_2->text();
-    edit_password editPassword;
-    editPassword.setModal(true);
-    editPassword.on_buttonBox_replacepassword(oldPassword);
-    editPassword.exec();
-    ui->GeneratedPassword->clear();
-    ui->GeneratedPassword_2->clear();
-    ShowDatabaseTable();
+    if(ui->GeneratedPassword_2->text()!="")
+    {
+        QString oldPassword = ui->GeneratedPassword_2->text();
+        edit_password editPassword;
+        editPassword.setModal(true);
+        editPassword.on_buttonBox_replacepassword(oldPassword);
+        editPassword.exec();
+        ShowDatabaseTable();
+        ui->GeneratedPassword->clear();
+        ui->GeneratedPassword_2->clear();
+    }
+    else
+        QMessageBox::warning(this,tr("Error"),tr("You didn't select password!"));
 }
 
 void MainWindow::on_Delete_clicked()
 {
-    QString pass=ui->GeneratedPassword_2->text();
-    QSqlQuery DeleteQuery;
-    DeleteQuery.prepare("DELETE FROM SavedPasswords WHERE Password='"+pass+"'");
-    if(DeleteQuery.exec()){
-        QMessageBox::information(this,tr("Delete"),tr("Your password is deleted from database."));
-        while(DeleteQuery.next())
-            ui->GeneratedPassword_2->setText(DeleteQuery.value(0).toString());
+    QString pass = ui->GeneratedPassword_2->text();
+    if(pass!="")
+    {
+        QSqlQuery DeleteQuery;
+        DeleteQuery.prepare("DELETE FROM SavedPasswords WHERE Password='"+pass+"'");
+        if(DeleteQuery.exec()){
+            QMessageBox::information(this,tr("Delete"),tr("Your password is deleted from database."));
+            while(DeleteQuery.next())
+                ui->GeneratedPassword_2->setText(DeleteQuery.value(0).toString());
+        }
+        ui->GeneratedPassword->clear();
+        ui->GeneratedPassword_2->clear();
+        ShowDatabaseTable();
     }
-    ui->GeneratedPassword->clear();
-    ui->GeneratedPassword_2->clear();
-    ShowDatabaseTable();
+    else
+        QMessageBox::warning(this,tr("Error"),tr("You didn't select password!"));
 }
 
 void MainWindow::ShowDatabaseTable()
@@ -199,7 +219,7 @@ void MainWindow::on_UpperCase_checkBox_stateChanged(int arg1)
         ui->PasswordLength->setNum(passwordLength);
         ui->HorizontalSlider->setValue(passwordLength);
         ui->UpperCase_spinBox->setMinimum(1);
-        ui->UpperCase_spinBox->setValue(1);
+        ui->UpperCase_spinBox->setValue(2);
     }
 }
 
@@ -221,7 +241,7 @@ void MainWindow::on_LowerCase_checkBox_stateChanged(int arg1)
         ui->PasswordLength->setNum(passwordLength);
         ui->HorizontalSlider->setValue(passwordLength);
         ui->LowerCase_spinBox->setMinimum(1);
-        ui->LowerCase_spinBox->setValue(1);
+        ui->LowerCase_spinBox->setValue(2);
     }
 }
 
@@ -243,7 +263,7 @@ void MainWindow::on_Numbers_checkBox_stateChanged(int arg1)
         ui->PasswordLength->setNum(passwordLength);
         ui->HorizontalSlider->setValue(passwordLength);
         ui->Numbers_spinBox->setMinimum(1);
-        ui->Numbers_spinBox->setValue(1);
+        ui->Numbers_spinBox->setValue(2);
     }
 }
 
@@ -265,7 +285,7 @@ void MainWindow::on_Symbols_checkBox_stateChanged(int arg1)
         ui->PasswordLength->setNum(passwordLength);
         ui->HorizontalSlider->setValue(passwordLength);
         ui->Symbols_spinBox->setMinimum(1);
-        ui->Symbols_spinBox->setValue(1);
+        ui->Symbols_spinBox->setValue(2);
     }
 }
 
@@ -299,13 +319,13 @@ void MainWindow::on_Symbols_spinBox_valueChanged()
 
 void MainWindow::on_ResetButton_clicked()
 {
-    ui->UpperCase_spinBox->setValue(1);
-    ui->LowerCase_spinBox->setValue(1);
-    ui->Numbers_spinBox->setValue(1);
-    ui->Symbols_spinBox->setValue(1);
+    ui->UpperCase_spinBox->setValue(2);
+    ui->LowerCase_spinBox->setValue(2);
+    ui->Numbers_spinBox->setValue(2);
+    ui->Symbols_spinBox->setValue(2);
     ui->UpperCase_checkBox->setChecked(true);
     ui->LowerCase_checkBox->setChecked(true);
     ui->Numbers_checkBox->setChecked(true);
     ui->Symbols_checkBox->setChecked(true);
-    ui->PasswordLength->setNum(4);
+    ui->PasswordLength->setNum(8);
 }
