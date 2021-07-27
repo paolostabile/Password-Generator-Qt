@@ -6,7 +6,6 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QClipboard>
-using namespace std;
 
 int MainWindow::passwordLength;
 QString MainWindow::passwordShuffle;
@@ -16,8 +15,11 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ::MainWindow::passwordLength=ui->UpperCase_spinBox->value()+ui->LowerCase_spinBox->value()+ui->Numbers_spinBox->value()+ui->Symbols_spinBox->value();
-    ::MainWindow::passwordShuffle="";
+    ::MainWindow::passwordLength = ui->UpperCase_spinBox->value() +
+            ui->LowerCase_spinBox->value() +
+            ui->Numbers_spinBox->value() +
+            ui->Symbols_spinBox->value();
+    ::MainWindow::passwordShuffle = "";
 }
 
 MainWindow::~MainWindow()
@@ -27,45 +29,34 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_GeneratePassword_clicked()
 {
-    password = "";
-    srand(unsigned(time(0)));
+    std::string password = "";
     for (int i = 0; i < ui->UpperCase_spinBox->value(); ++i) {
-        int randomInt = rand()%25;
+        int randomInt = rand() % char_collection_upper.length();
         password += char_collection_upper[randomInt];
     }
     for (int i = 0; i < ui->LowerCase_spinBox->value(); ++i) {
-        int randomInt = rand()%25;
+        int randomInt = rand() % char_collection_lower.length();
         password += char_collection_lower[randomInt];
     }
     for (int i = 0; i < ui->Numbers_spinBox->value(); ++i) {
-        int randomInt = rand()%10;
+        int randomInt = rand() % numbers.length();
         password += numbers[randomInt];
     }
     for (int i = 0; i < ui->Symbols_spinBox->value(); ++i) {
-        int randomInt = rand()%29;
+        int randomInt = rand() % symbols.length();
         password += symbols[randomInt];
     }
     random_shuffle(password.begin(), password.end());
     passwordShuffle = QString::fromStdString(password);
     ui->GeneratedPassword->setText(passwordShuffle);
     ui->GeneratedPassword_2->setText(passwordShuffle);
-    for (int i = 0;i < passwordShuffle.length(); ++i) {
-        if(passwordShuffle[i].isUpper())
-            hasUpper = true;
-        if(passwordShuffle[i].isLower())
-            hasLower = true;
-        if(passwordShuffle[i].isDigit())
-            hasDigit = true;
-        if(!isalpha(password[i]) && !isdigit(password[i]))
-            specialChar = true;
-    }
-    if (hasLower && hasUpper && hasDigit && specialChar && (passwordShuffle.length() >= 8))
+    if (ui->LowerCase_checkBox->isChecked() && ui->UpperCase_checkBox->isChecked() && ui->Numbers_checkBox->isChecked() && ui->Symbols_checkBox->isChecked() && (passwordShuffle.length() >= 8))
     {
         ui->PasswordStrengthLabel->setStyleSheet("QLabel{color:green;}");
         ui->PasswordStrength->setStyleSheet("QLabel{color:green;}");
         ui->PasswordStrength->setText("Strong password");
     }
-    else if ((hasLower || hasUpper) && specialChar && (passwordShuffle.length() >= 6))
+    else if ((ui->LowerCase_checkBox->isChecked() || ui->UpperCase_checkBox->isChecked()) && ui->Symbols_checkBox->isChecked() && (passwordShuffle.length() >= 6))
     {
         ui->PasswordStrengthLabel->setStyleSheet("QLabel{color:blue;}");
         ui->PasswordStrength->setStyleSheet("QLabel{color:blue;}");
@@ -109,7 +100,7 @@ void MainWindow::on_OpenDatabase_clicked()
 
 void MainWindow::on_CreateDatabase_clicked()
 {
-    QString FileName = QFileDialog::getSaveFileName(NULL, "Create New File","C://","*.sqlite");
+    QString FileName = QFileDialog::getSaveFileName(NULL, "Create New Database","C://","*.sqlite");
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(FileName);
     if(!db.open())
@@ -126,17 +117,6 @@ void MainWindow::on_CreateDatabase_clicked()
     ShowDatabaseTable();
 }
 
-void MainWindow::on_tableView_activated(const QModelIndex &index)
-{
-    QString val = ui->tableView->model()->data(index).toString();
-    QSqlQuery qryShow;
-    qryShow.prepare("SELECT * FROM SavedPasswords WHERE Password='"+val+"' or Description='"+val+"'");
-    if(qryShow.exec())
-        while(qryShow.next()){
-            ui->GeneratedPassword_2->setText(qryShow.value(0).toString());
-            /*ui->GeneratedPassword_2->setText(qryShow.value(1).toString());*/
-        }
-}
 
 void MainWindow::on_Save_clicked()
 {
@@ -145,8 +125,6 @@ void MainWindow::on_Save_clicked()
         save_password savePassword;
         savePassword.setModal(true);
         savePassword.exec();
-        ui->GeneratedPassword->clear();
-        ui->GeneratedPassword_2->clear();
         ShowDatabaseTable();
     }
     else
@@ -163,8 +141,6 @@ void MainWindow::on_Edit_clicked()
         editPassword.on_buttonBox_replacepassword(oldPassword);
         editPassword.exec();
         ShowDatabaseTable();
-        ui->GeneratedPassword->clear();
-        ui->GeneratedPassword_2->clear();
     }
     else
         QMessageBox::warning(this,tr("Error"),tr("You didn't select password!"));
@@ -329,3 +305,15 @@ void MainWindow::on_ResetButton_clicked()
     ui->Symbols_checkBox->setChecked(true);
     ui->PasswordLength->setNum(8);
 }
+
+void MainWindow::on_tableView_clicked(const QModelIndex &index)
+{
+    QString val = ui->tableView->model()->data(index).toString();
+    QSqlQuery qryShow;
+    qryShow.prepare("SELECT * FROM SavedPasswords WHERE Password='"+val+"' or Description='"+val+"'");
+    if(qryShow.exec())
+        while(qryShow.next()){
+            ui->GeneratedPassword_2->setText(qryShow.value(0).toString());
+        }
+}
+
