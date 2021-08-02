@@ -22,8 +22,15 @@
     <height>700</height>
    </size>
   </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::NoContextMenu</enum>
+  </property>
   <property name="windowTitle">
    <string>Password Generator</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>PadLock.png</normaloff>PadLock.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="minimumSize">

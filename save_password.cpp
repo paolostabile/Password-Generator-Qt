@@ -34,7 +34,6 @@ void save_password::on_buttonBox_accepted()
     }
 }
 
-
 void save_password::on_buttonBox_rejected()
 {
 

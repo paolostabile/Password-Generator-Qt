@@ -27,47 +27,48 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void generatePassword(QSpinBox& spinBox, const std::string& collection, std::string& password)
+{
+    for (int i = 0; i < spinBox.value(); ++i)
+        password += collection[rand() % collection.length()];
+}
+
+void MainWindow::checkPasswordStrength(QString& color, QString& strength)
+{
+    if (ui->LowerCase_checkBox->isChecked() && ui->UpperCase_checkBox->isChecked() && ui->Numbers_checkBox->isChecked() && ui->Symbols_checkBox->isChecked() && (passwordShuffle.length() >= 8))
+    {
+        color = "green";
+        strength = "Strong";
+    }
+    else if ((ui->LowerCase_checkBox->isChecked() || ui->UpperCase_checkBox->isChecked()) && ui->Symbols_checkBox->isChecked() && (passwordShuffle.length() >= 6))
+    {
+        color = "blue";
+        strength = "Moderate";
+    }
+    else
+    {
+        color = "red";
+        strength = "Weak";
+    }
+}
+
 void MainWindow::on_GeneratePassword_clicked()
 {
     std::string password = "";
-    for (int i = 0; i < ui->UpperCase_spinBox->value(); ++i) {
-        int randomInt = rand() % char_collection_upper.length();
-        password += char_collection_upper[randomInt];
-    }
-    for (int i = 0; i < ui->LowerCase_spinBox->value(); ++i) {
-        int randomInt = rand() % char_collection_lower.length();
-        password += char_collection_lower[randomInt];
-    }
-    for (int i = 0; i < ui->Numbers_spinBox->value(); ++i) {
-        int randomInt = rand() % numbers.length();
-        password += numbers[randomInt];
-    }
-    for (int i = 0; i < ui->Symbols_spinBox->value(); ++i) {
-        int randomInt = rand() % symbols.length();
-        password += symbols[randomInt];
-    }
+    generatePassword(*ui->UpperCase_spinBox, char_collection_upper, password);
+    generatePassword(*ui->LowerCase_spinBox, char_collection_lower, password);
+    generatePassword(*ui->Numbers_spinBox, numbers, password);
+    generatePassword(*ui->Symbols_spinBox, symbols, password);
     random_shuffle(password.begin(), password.end());
     passwordShuffle = QString::fromStdString(password);
     ui->GeneratedPassword->setText(passwordShuffle);
     ui->GeneratedPassword_2->setText(passwordShuffle);
-    if (ui->LowerCase_checkBox->isChecked() && ui->UpperCase_checkBox->isChecked() && ui->Numbers_checkBox->isChecked() && ui->Symbols_checkBox->isChecked() && (passwordShuffle.length() >= 8))
-    {
-        ui->PasswordStrengthLabel->setStyleSheet("QLabel{color:green;}");
-        ui->PasswordStrength->setStyleSheet("QLabel{color:green;}");
-        ui->PasswordStrength->setText("Strong password");
-    }
-    else if ((ui->LowerCase_checkBox->isChecked() || ui->UpperCase_checkBox->isChecked()) && ui->Symbols_checkBox->isChecked() && (passwordShuffle.length() >= 6))
-    {
-        ui->PasswordStrengthLabel->setStyleSheet("QLabel{color:blue;}");
-        ui->PasswordStrength->setStyleSheet("QLabel{color:blue;}");
-        ui->PasswordStrength->setText("Moderate password");
-    }
-    else
-    {
-        ui->PasswordStrengthLabel->setStyleSheet("QLabel{color:red;}");
-        ui->PasswordStrength->setStyleSheet("QLabel{color:red;}");
-        ui->PasswordStrength->setText("Weak password");
-    }
+    QString color;
+    QString strength;
+    checkPasswordStrength(color, strength);
+    ui->PasswordStrengthLabel->setStyleSheet("QLabel{color:" + color + ";}");
+    ui->PasswordStrength->setStyleSheet("QLabel{color:" + color + ";}");
+    ui->PasswordStrength->setText(strength + " password");
 }
 
 void MainWindow::on_CopyPassword_clicked()
@@ -176,121 +177,63 @@ void MainWindow::ShowDatabaseTable()
     ui->tableView->setModel(model);
 }
 
-void MainWindow::on_UpperCase_checkBox_stateChanged(int arg1)
+void MainWindow::on_tableView_clicked(const QModelIndex &index)
 {
-
-    if(ui->UpperCase_spinBox->isEnabled())
-    {
-        ui->UpperCase_spinBox->setEnabled(arg1);
-        passwordLength -= ui->UpperCase_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->UpperCase_spinBox->setMinimum(0);
-        ui->UpperCase_spinBox->setValue(0);
-    }
-    else
-    {
-        ui->UpperCase_spinBox->setEnabled(true);
-        passwordLength += ui->UpperCase_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->UpperCase_spinBox->setMinimum(1);
-        ui->UpperCase_spinBox->setValue(2);
-    }
+    QString val = ui->tableView->model()->data(index).toString();
+    QSqlQuery qryShow;
+    qryShow.prepare("SELECT * FROM SavedPasswords WHERE Password='"+val+"' or Description='"+val+"'");
+    if(qryShow.exec())
+        while(qryShow.next()){
+            ui->GeneratedPassword_2->setText(qryShow.value(0).toString());
+        }
 }
 
-void MainWindow::on_LowerCase_checkBox_stateChanged(int arg1)
+void MainWindow::on_UpperCase_checkBox_stateChanged(int arg1)
 {
-    if(ui->LowerCase_spinBox->isEnabled())
-    {
-        ui->LowerCase_spinBox->setEnabled(arg1);
-        passwordLength -= ui->LowerCase_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->LowerCase_spinBox->setMinimum(0);
-        ui->LowerCase_spinBox->setValue(0);
-    }
-    else
-    {
-        ui->LowerCase_spinBox->setEnabled(true);
-        passwordLength += ui->LowerCase_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->LowerCase_spinBox->setMinimum(1);
-        ui->LowerCase_spinBox->setValue(2);
-    }
+    ui->UpperCase_spinBox->setEnabled(arg1);
+    ui->UpperCase_spinBox->setMinimum(arg1 ? 1 : 0);
+    ui->UpperCase_spinBox->setValue(arg1 ? 2 : 0);
 }
 
 void MainWindow::on_Numbers_checkBox_stateChanged(int arg1)
 {
-    if(ui->Numbers_spinBox->isEnabled())
-    {
-        ui->Numbers_spinBox->setEnabled(arg1);
-        passwordLength -= ui->Numbers_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->Numbers_spinBox->setMinimum(0);
-        ui->Numbers_spinBox->setValue(0);
-    }
-    else
-    {
-        ui->Numbers_spinBox->setEnabled(true);
-        passwordLength += ui->Numbers_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->Numbers_spinBox->setMinimum(1);
-        ui->Numbers_spinBox->setValue(2);
-    }
+    ui->Numbers_spinBox->setEnabled(arg1);
+    ui->Numbers_spinBox->setMinimum(arg1 ? 1 : 0);
+    ui->Numbers_spinBox->setValue(arg1 ? 2 : 0);
 }
 
 void MainWindow::on_Symbols_checkBox_stateChanged(int arg1)
 {
-    if(ui->Symbols_spinBox->isEnabled())
-    {
-        ui->Symbols_spinBox->setEnabled(arg1);
-        passwordLength -= ui->Symbols_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->Symbols_spinBox->setMinimum(0);
-        ui->Symbols_spinBox->setValue(0);
-    }
-    else
-    {
-        ui->Symbols_spinBox->setEnabled(true);
-        passwordLength += ui->Symbols_spinBox->value();
-        ui->PasswordLength->setNum(passwordLength);
-        ui->HorizontalSlider->setValue(passwordLength);
-        ui->Symbols_spinBox->setMinimum(1);
-        ui->Symbols_spinBox->setValue(2);
-    }
+    ui->Symbols_spinBox->setEnabled(arg1);
+    ui->Symbols_spinBox->setMinimum(arg1 ? 1 : 0);
+    ui->Symbols_spinBox->setValue(arg1 ? 2 : 0);
+}
+
+void MainWindow::spinBoxValueChanged()
+{
+    passwordLength = ui->UpperCase_spinBox->value()+ui->LowerCase_spinBox->value()+ui->Numbers_spinBox->value()+ui->Symbols_spinBox->value();
+    ui->PasswordLength->setNum(passwordLength);
+    ui->HorizontalSlider->setValue(passwordLength);
 }
 
 void MainWindow::on_UpperCase_spinBox_valueChanged()
 {
-    passwordLength = ui->UpperCase_spinBox->value()+ui->LowerCase_spinBox->value()+ui->Numbers_spinBox->value()+ui->Symbols_spinBox->value();
-    ui->PasswordLength->setNum(passwordLength);
-    ui->HorizontalSlider->setValue(passwordLength);
+    spinBoxValueChanged();
 }
 
 void MainWindow::on_LowerCase_spinBox_valueChanged()
 {
-    passwordLength = ui->UpperCase_spinBox->value()+ui->LowerCase_spinBox->value()+ui->Numbers_spinBox->value()+ui->Symbols_spinBox->value();
-    ui->PasswordLength->setNum(passwordLength);
-    ui->HorizontalSlider->setValue(passwordLength);
+    spinBoxValueChanged();
 }
 
 void MainWindow::on_Numbers_spinBox_valueChanged()
 {
-    passwordLength = ui->UpperCase_spinBox->value()+ui->LowerCase_spinBox->value()+ui->Numbers_spinBox->value()+ui->Symbols_spinBox->value();
-    ui->PasswordLength->setNum(passwordLength);
-    ui->HorizontalSlider->setValue(passwordLength);
+    spinBoxValueChanged();
 }
 
 void MainWindow::on_Symbols_spinBox_valueChanged()
 {
-    passwordLength = ui->UpperCase_spinBox->value()+ui->LowerCase_spinBox->value()+ui->Numbers_spinBox->value()+ui->Symbols_spinBox->value();
-    ui->PasswordLength->setNum(passwordLength);
-    ui->HorizontalSlider->setValue(passwordLength);
+    spinBoxValueChanged();
 }
 
 void MainWindow::on_ResetButton_clicked()
@@ -305,15 +248,3 @@ void MainWindow::on_ResetButton_clicked()
     ui->Symbols_checkBox->setChecked(true);
     ui->PasswordLength->setNum(8);
 }
-
-void MainWindow::on_tableView_clicked(const QModelIndex &index)
-{
-    QString val = ui->tableView->model()->data(index).toString();
-    QSqlQuery qryShow;
-    qryShow.prepare("SELECT * FROM SavedPasswords WHERE Password='"+val+"' or Description='"+val+"'");
-    if(qryShow.exec())
-        while(qryShow.next()){
-            ui->GeneratedPassword_2->setText(qryShow.value(0).toString());
-        }
-}
-

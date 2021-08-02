@@ -29,7 +29,6 @@ private slots:
     void on_Delete_clicked();
     void on_tableView_clicked(const QModelIndex &index);
     void on_UpperCase_checkBox_stateChanged(int arg1);
-    void on_LowerCase_checkBox_stateChanged(int arg1);
     void on_Numbers_checkBox_stateChanged(int arg1);
     void on_Symbols_checkBox_stateChanged(int arg1);
     void on_UpperCase_spinBox_valueChanged();
@@ -39,6 +38,8 @@ private slots:
     void on_ResetButton_clicked();
 private:
     Ui::MainWindow *ui;
+    void checkPasswordStrength(QString& color, QString& strength);
+    void spinBoxValueChanged();
     void ShowDatabaseTable();
 };
 #endif // MAINWINDOW_H
